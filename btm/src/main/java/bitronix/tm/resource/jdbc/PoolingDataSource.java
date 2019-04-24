@@ -47,6 +47,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -364,6 +365,11 @@ public class PoolingDataSource extends ResourceBean implements DataSource, XARes
 
     public int getLoginTimeout() throws SQLException {
         return xaDataSource.getLoginTimeout();
+    }
+
+    @Override
+    public java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        return null;
     }
 
     public void setLoginTimeout(int seconds) throws SQLException {

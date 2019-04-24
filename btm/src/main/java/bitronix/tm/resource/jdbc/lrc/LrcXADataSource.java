@@ -29,7 +29,9 @@ import java.lang.reflect.Proxy;
 import java.sql.Connection;
 import java.sql.Driver;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * XADataSource implementation for a non-XA JDBC resource emulating XA with Last Resource Commit.
@@ -49,6 +51,11 @@ public class LrcXADataSource implements XADataSource {
 
     public int getLoginTimeout() throws SQLException {
         return loginTimeout;
+    }
+
+    @Override
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        return null;
     }
 
     public void setLoginTimeout(int seconds) throws SQLException {

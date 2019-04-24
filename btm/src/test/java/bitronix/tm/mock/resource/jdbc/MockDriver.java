@@ -22,9 +22,11 @@ package bitronix.tm.mock.resource.jdbc;
 
 import java.sql.Driver;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Connection;
 import java.sql.DriverPropertyInfo;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  *
@@ -42,6 +44,11 @@ public class MockDriver implements Driver {
 
     public boolean jdbcCompliant() {
         return false;
+    }
+
+    @Override
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        return null;
     }
 
     public boolean acceptsURL(String url) throws SQLException {

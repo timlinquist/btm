@@ -25,6 +25,7 @@ import static org.mockito.Mockito.*;
 import java.io.PrintWriter;
 import java.sql.*;
 import java.util.*;
+import java.util.logging.Logger;
 
 import javax.sql.*;
 import javax.transaction.xa.*;
@@ -53,6 +54,11 @@ public class MockitoXADataSource implements XADataSource {
 
     public int getLoginTimeout() throws SQLException {
         return 0;
+    }
+
+    @Override
+    public Logger getParentLogger() throws SQLFeatureNotSupportedException {
+        return null;
     }
 
     public void setLoginTimeout(int seconds) throws SQLException {
