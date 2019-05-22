@@ -156,6 +156,19 @@ public class LrcXASession implements XASession {
         return nonXaSession.createConsumer(destination, messageSelector, noLocal);
     }
 
+    @Override
+    public MessageConsumer createSharedConsumer(Topic topic, String sharedSubscriptionName) throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
+    public MessageConsumer createSharedConsumer(Topic topic, String sharedSubscriptionName, String messageSelector) throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
     public Queue createQueue(String queueName) throws JMSException {
         return nonXaSession.createQueue(queueName);
     }
@@ -172,6 +185,31 @@ public class LrcXASession implements XASession {
         return nonXaSession.createDurableSubscriber(topic, name, messageSelector, noLocal);
     }
 
+    @Override
+    public MessageConsumer createDurableConsumer(Topic topic, String name) throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
+    public MessageConsumer createDurableConsumer(Topic topic, String name, String messageSelector, boolean noLocal) throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
+    public MessageConsumer createSharedDurableConsumer(Topic topic, String name) throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
+    public MessageConsumer createSharedDurableConsumer(Topic topic, String name, String messageSelector) throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
     public QueueBrowser createBrowser(Queue queue) throws JMSException {
         return nonXaSession.createBrowser(queue);
     }

@@ -28,6 +28,10 @@ import javax.jms.JMSException;
 import javax.jms.XAConnection;
 import javax.jms.XAConnectionFactory;
 import java.util.Properties;
+import javax.jms.XAJMSContext;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * XAConnectionFactory implementation for a non-XA JMS resource emulating XA with Last Resource Commit.
@@ -82,6 +86,19 @@ public class LrcXAConnectionFactory implements XAConnectionFactory {
         }
     }
 
+    @Override
+    public XAJMSContext createXAContext()
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
+    public XAJMSContext createXAContext(String userName, String password)
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
     public String toString() {
         return "a JMS LrcXAConnectionFactory on " + connectionFactoryClassName + " with properties " + properties;
     }

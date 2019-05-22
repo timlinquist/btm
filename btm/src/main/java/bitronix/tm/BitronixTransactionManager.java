@@ -20,18 +20,11 @@
  */
 package bitronix.tm;
 
-import bitronix.tm.internal.BitronixSystemException;
-import bitronix.tm.internal.ThreadContext;
-import bitronix.tm.internal.XAResourceManager;
-import bitronix.tm.utils.Decoder;
-import bitronix.tm.utils.InitializationException;
-import bitronix.tm.utils.MonotonicClock;
-import bitronix.tm.utils.Scheduler;
-import bitronix.tm.utils.Service;
-import bitronix.tm.utils.Uid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
+import java.io.IOException;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.naming.NamingException;
 import javax.naming.Reference;
@@ -49,11 +42,19 @@ import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import javax.transaction.UserTransaction;
 import javax.transaction.xa.XAException;
-import java.io.IOException;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
+import bitronix.tm.internal.BitronixSystemException;
+import bitronix.tm.internal.ThreadContext;
+import bitronix.tm.internal.XAResourceManager;
+import bitronix.tm.utils.Decoder;
+import bitronix.tm.utils.InitializationException;
+import bitronix.tm.utils.MonotonicClock;
+import bitronix.tm.utils.Scheduler;
+import bitronix.tm.utils.Service;
+import bitronix.tm.utils.Uid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * Implementation of {@link TransactionManager} and {@link UserTransaction}.
@@ -79,6 +80,7 @@ public class BitronixTransactionManager implements TransactionManager, UserTrans
             shuttingDown = false;
             logVersion();
             Configuration configuration = TransactionManagerServices.getConfiguration();
+            configuration.setDisableJmx(true);
             configuration.buildServerIdArray(); // first call will initialize the ServerId
 
             if (log.isDebugEnabled()) log.debug("starting BitronixTransactionManager using " + configuration);

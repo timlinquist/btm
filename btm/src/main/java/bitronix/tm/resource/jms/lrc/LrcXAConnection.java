@@ -53,14 +53,41 @@ public class LrcXAConnection implements XAConnection {
         throw new JMSException(LrcXAConnection.class.getName() + " can only respond to createXASession()");
     }
 
+    @Override
+    public Session createSession(int sessionMode) throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
+    public Session createSession() throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
     public ConnectionConsumer createConnectionConsumer(Destination destination, String messageSelector, ServerSessionPool serverSessionPool, int maxMessages) throws JMSException {
         return nonXaConnection.createConnectionConsumer(destination, messageSelector, serverSessionPool, maxMessages);
     }
 
+    @Override
+    public ConnectionConsumer createSharedConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool serverSessionPool, int maxMessages) throws JMSException {
         return nonXaConnection.createDurableConnectionConsumer(topic, subscriptionName, messageSelector, serverSessionPool, maxMessages);
     }
 
+    @Override
+    public ConnectionConsumer createSharedDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
     public String getClientID() throws JMSException {
         return nonXaConnection.getClientID();
     }

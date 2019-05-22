@@ -20,15 +20,29 @@
  */
 package bitronix.tm.mock.resource.jms;
 
-import static org.mockito.Matchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-import javax.jms.*;
-
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.jms.Topic;
+import javax.jms.XAConnection;
+import javax.jms.XAConnectionFactory;
+import javax.jms.XAJMSContext;
+import javax.jms.XASession;
 
 import bitronix.tm.mock.resource.MockXAResource;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 /**
  *
@@ -85,7 +99,19 @@ public class MockXAConnectionFactory implements XAConnectionFactory {
         return createXAConnection();
     }
 
-    public static void setStaticCloseXAConnectionException(JMSException e) {
+	@Override
+	public XAJMSContext createXAContext()
+	{
+		throw new RuntimeException("Method not supported");
+	}
+
+	@Override
+	public XAJMSContext createXAContext(String userName, String password)
+	{
+		throw new RuntimeException("Method not supported");
+	}
+
+	public static void setStaticCloseXAConnectionException(JMSException e) {
         staticCloseXAConnectionException = e;
     }
 

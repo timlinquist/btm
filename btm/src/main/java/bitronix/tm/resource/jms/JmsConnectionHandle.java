@@ -61,6 +61,19 @@ public class JmsConnectionHandle implements Connection {
         return pooledConnection.createSession(transacted, acknowledgeMode);
     }
 
+    @Override
+    public Session createSession(int sessionMode) throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
+    public Session createSession() throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
     public void close() throws JMSException {
         if (closed)
             return;
@@ -108,8 +121,21 @@ public class JmsConnectionHandle implements Connection {
         return getXAConnection().createConnectionConsumer(destination, messageSelector, sessionPool, maxMessages);
     }
 
+    @Override
+    public ConnectionConsumer createSharedConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
     public ConnectionConsumer createDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException {
         return getXAConnection().createDurableConnectionConsumer(topic, subscriptionName, messageSelector, sessionPool, maxMessages);
+    }
+
+    @Override
+    public ConnectionConsumer createSharedDurableConnectionConsumer(Topic topic, String subscriptionName, String messageSelector, ServerSessionPool sessionPool, int maxMessages) throws JMSException
+    {
+        throw new RuntimeException("Method not supported");
     }
 
 }

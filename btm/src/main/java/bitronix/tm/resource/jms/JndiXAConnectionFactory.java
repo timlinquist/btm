@@ -23,6 +23,7 @@ package bitronix.tm.resource.jms;
 import javax.jms.JMSException;
 import javax.jms.XAConnection;
 import javax.jms.XAConnectionFactory;
+import javax.jms.XAJMSContext;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -240,6 +241,18 @@ public class JndiXAConnectionFactory implements XAConnectionFactory {
         } catch (NamingException ex) {
             throw (JMSException) new JMSException("error looking up wrapped XAConnectionFactory at " + name).initCause(ex);
         }
+    }
+
+    @Override
+    public XAJMSContext createXAContext()
+    {
+        throw new RuntimeException("Method not supported");
+    }
+
+    @Override
+    public XAJMSContext createXAContext(String userName, String password)
+    {
+        throw new RuntimeException("Method not supported");
     }
 
     private static boolean isEmpty(String str) {

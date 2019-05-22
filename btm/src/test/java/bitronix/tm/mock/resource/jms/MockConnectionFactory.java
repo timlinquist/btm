@@ -23,7 +23,13 @@ package bitronix.tm.mock.resource.jms;
 import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.*;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.Destination;
+import javax.jms.JMSContext;
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
 
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -52,4 +58,28 @@ public class MockConnectionFactory implements ConnectionFactory {
     public Connection createConnection(String jndiName, String jndiName1) throws JMSException {
         return createConnection();
     }
+
+	@Override
+	public JMSContext createContext()
+	{
+		throw new RuntimeException("Method not supported");
+	}
+
+	@Override
+	public JMSContext createContext(String userName, String password)
+	{
+		throw new RuntimeException("Method not supported");
+	}
+
+	@Override
+	public JMSContext createContext(String userName, String password, int sessionMode)
+	{
+		throw new RuntimeException("Method not supported");
+	}
+
+	@Override
+	public JMSContext createContext(int sessionMode)
+	{
+		throw new RuntimeException("Method not supported");
+	}
 }
