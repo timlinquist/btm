@@ -20,18 +20,33 @@
  */
 package bitronix.tm.resource.common;
 
-import java.util.*;
+import static org.apache.commons.lang3.reflect.ConstructorUtils.invokeConstructor;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.transaction.Synchronization;
 import javax.transaction.xa.XAResource;
 
-import org.slf4j.*;
-
-import bitronix.tm.*;
-import bitronix.tm.internal.*;
-import bitronix.tm.recovery.*;
-import bitronix.tm.utils.*;
+import bitronix.tm.BitronixTransaction;
+import bitronix.tm.BitronixXid;
+import bitronix.tm.TransactionManagerServices;
+import bitronix.tm.internal.BitronixRuntimeException;
+import bitronix.tm.internal.XAResourceHolderState;
+import bitronix.tm.recovery.IncrementalRecoverer;
+import bitronix.tm.recovery.RecoveryException;
+import bitronix.tm.utils.ClassLoaderUtils;
 import bitronix.tm.utils.CryptoEngine;
+import bitronix.tm.utils.Decoder;
+import bitronix.tm.utils.MonotonicClock;
+import bitronix.tm.utils.PropertyUtils;
+import bitronix.tm.utils.Uid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Generic XA pool. {@link XAStatefulHolder} instances are created by the {@link XAPool} out of a
@@ -53,6 +68,10 @@ public class XAPool implements StateChangeListener {
     private boolean failed = false;
 
     public XAPool(XAResourceProducer xaResourceProducer, ResourceBean bean) throws Exception {
+        this(xaResourceProducer, bean, new Object[] {});
+    }
+
+    public XAPool(XAResourceProducer xaResourceProducer, ResourceBean bean, Object[] factoryConstructorArgs) throws Exception {
         this.xaResourceProducer = xaResourceProducer;
         this.bean = bean;
         if (bean.getMaxPoolSize() < 1 || bean.getMinPoolSize() > bean.getMaxPoolSize())
@@ -60,7 +79,7 @@ public class XAPool implements StateChangeListener {
         if (bean.getAcquireIncrement() < 1)
             throw new IllegalArgumentException("cannot create a pool with a connection acquisition increment less than 1, configured value is " + bean.getAcquireIncrement());
 
-        xaFactory = createXAFactory(bean);
+        xaFactory = createXAFactory(bean, factoryConstructorArgs);
         init();
 
         if (bean.getIgnoreRecoveryFailures())
@@ -285,12 +304,13 @@ public class XAPool implements StateChangeListener {
         objects.add(xaStatefulHolder);
     }
 
-    private static Object createXAFactory(ResourceBean bean) throws Exception {
+    private static Object createXAFactory(ResourceBean bean, Object[] factoryConstructorArgs) throws Exception {
         String className = bean.getClassName();
         if (className == null)
             throw new IllegalArgumentException("className cannot be null");
         Class xaFactoryClass = ClassLoaderUtils.loadClass(className);
-        Object xaFactory = xaFactoryClass.newInstance();
+
+        Object xaFactory = invokeConstructor(xaFactoryClass, factoryConstructorArgs);
 
         for (Map.Entry<Object, Object> entry : bean.getDriverProperties().entrySet()) {
             String name = (String) entry.getKey();
