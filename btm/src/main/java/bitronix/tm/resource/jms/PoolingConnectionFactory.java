@@ -20,6 +20,17 @@
  */
 package bitronix.tm.resource.jms;
 
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSContext;
+import javax.jms.JMSException;
+import javax.jms.XAConnection;
+import javax.jms.XAConnectionFactory;
+import javax.naming.NamingException;
+import javax.naming.Reference;
+import javax.naming.StringRefAddr;
+import javax.transaction.xa.XAResource;
+
 import bitronix.tm.internal.XAResourceHolderState;
 import bitronix.tm.recovery.RecoveryException;
 import bitronix.tm.resource.ResourceConfigurationException;
@@ -34,17 +45,6 @@ import bitronix.tm.resource.common.XAStatefulHolder;
 import bitronix.tm.utils.ManagementRegistrar;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSContext;
-import javax.jms.JMSException;
-import javax.jms.XAConnection;
-import javax.jms.XAConnectionFactory;
-import javax.naming.NamingException;
-import javax.naming.Reference;
-import javax.naming.StringRefAddr;
-import javax.transaction.xa.XAResource;
 
 /**
  * Implementation of a JMS {@link ConnectionFactory} wrapping vendor's {@link XAConnectionFactory} implementation.
@@ -64,6 +64,7 @@ public class PoolingConnectionFactory extends ResourceBean implements Connection
     private volatile String user;
     private volatile String password;
     private volatile JmsConnectionHandle recoveryConnectionHandle;
+    private volatile Object[] constructorArgs = new Object[] {};
     
     private volatile String jmxName;
 
@@ -121,13 +122,16 @@ public class PoolingConnectionFactory extends ResourceBean implements Connection
         this.password = password;
     }
 
+    public void setConstructorArgs(Object... constructorArgs) {
+        this.constructorArgs = constructorArgs;
+    }
 
     private void buildXAPool() throws Exception {
         if (pool != null)
             return;
 
         if (log.isDebugEnabled()) log.debug("building JMS XA pool for " + getUniqueName() + " with " + getMinPoolSize() + " connection(s)");
-        pool = new XAPool(this, this);
+        pool = new XAPool(this, this, constructorArgs);
         try {
             ResourceRegistrar.register(this);
         } catch (RecoveryException ex) {
