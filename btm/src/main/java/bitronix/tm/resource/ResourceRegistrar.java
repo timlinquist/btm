@@ -20,6 +20,17 @@
  */
 package bitronix.tm.resource;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import javax.transaction.xa.XAResource;
+
 import bitronix.tm.TransactionManagerServices;
 import bitronix.tm.recovery.IncrementalRecoverer;
 import bitronix.tm.recovery.RecoveryException;
@@ -27,15 +38,6 @@ import bitronix.tm.resource.common.XAResourceHolder;
 import bitronix.tm.resource.common.XAResourceProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.transaction.xa.XAResource;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Collection of initialized {@link XAResourceProducer}s. All resources must be registered in the {@link ResourceRegistrar}
@@ -47,8 +49,10 @@ public class ResourceRegistrar {
 
     private final static Logger log = LoggerFactory.getLogger(ResourceRegistrar.class);
 
-    private static final Lock registrationLock = new ReentrantLock();
-    private static final ConcurrentMap<String, XAResourceProducer> resources = new ConcurrentHashMap<String, XAResourceProducer>();
+    private static ReadWriteLock resourcesReadWriteLock = new ReentrantReadWriteLock();
+    private static Lock resourcesReadLock = resourcesReadWriteLock.readLock();
+    private static Lock resourcesWriteLock = resourcesReadWriteLock.writeLock();
+    private static final HashMap<String, XAResourceProducer> resources = new HashMap<>();
 
     /**
      * Get a registered {@link XAResourceProducer}.
@@ -56,7 +60,12 @@ public class ResourceRegistrar {
      * @return the {@link XAResourceProducer} or null if there was none registered under that name.
      */
     public static XAResourceProducer get(String uniqueName) {
-        return resources.get(uniqueName);
+        resourcesReadLock.lock();
+        try {
+            return resources.get(uniqueName);
+        } finally {
+            resourcesReadLock.unlock();
+        }
     }
 
     /**
@@ -64,7 +73,12 @@ public class ResourceRegistrar {
      * @return a Set containing all {@link bitronix.tm.resource.common.XAResourceProducer}s unique names.
      */
     public static Set<String> getResourcesUniqueNames() {
-        return Collections.unmodifiableSet(resources.keySet());
+        resourcesReadLock.lock();
+        try {
+            return Collections.unmodifiableSet(new HashSet<>(resources.keySet()));
+        } finally {
+            resourcesReadLock.unlock();
+        }
     }
 
     /**
@@ -74,11 +88,12 @@ public class ResourceRegistrar {
      * @throws bitronix.tm.recovery.RecoveryException when an error happens during recovery.
      */
     public static void register(XAResourceProducer producer) throws RecoveryException {
-        registrationLock.lock();
+        String uniqueName = producer.getUniqueName();
+        if (uniqueName == null)
+            throw new IllegalArgumentException("invalid resource with null uniqueName");
+
+        resourcesWriteLock.lock();
         try {
-            String uniqueName = producer.getUniqueName();
-            if (producer.getUniqueName() == null)
-                throw new IllegalArgumentException("invalid resource with null uniqueName");
             if (resources.containsKey(uniqueName))
                 throw new IllegalArgumentException("resource with uniqueName '" + producer.getUniqueName() + "' has already been registered");
 
@@ -88,7 +103,7 @@ public class ResourceRegistrar {
             }
             resources.put(uniqueName, producer);
         } finally {
-            registrationLock.unlock();
+            resourcesWriteLock.unlock();
         }
     }
 
@@ -97,18 +112,19 @@ public class ResourceRegistrar {
      * @param producer the {@link XAResourceProducer}.
      */
     public static void unregister(XAResourceProducer producer) {
-        registrationLock.lock();
+        String uniqueName = producer.getUniqueName();
+        if (uniqueName == null)
+            throw new IllegalArgumentException("invalid resource with null uniqueName");
+
+        resourcesWriteLock.lock();
         try {
-            String uniqueName = producer.getUniqueName();
-            if (producer.getUniqueName() == null)
-                throw new IllegalArgumentException("invalid resource with null uniqueName");
             if (!resources.containsKey(uniqueName)) {
                 if (log.isDebugEnabled()) log.debug("resource with uniqueName '" + producer.getUniqueName() + "' has not been registered");
                 return;
             }
             resources.remove(uniqueName);
         } finally {
-            registrationLock.unlock();
+            resourcesWriteLock.unlock();
         }
     }
 
@@ -118,17 +134,30 @@ public class ResourceRegistrar {
      * @return the associated {@link XAResourceHolder} or null if it cannot be found.
      */
     public static XAResourceHolder findXAResourceHolder(XAResource xaResource) {
-        for (Map.Entry<String, XAResourceProducer> entry : resources.entrySet()) {
-            XAResourceProducer producer = entry.getValue();
+        resourcesReadLock.lock();
+        try {
+            for (Map.Entry<String, XAResourceProducer> entry : resources.entrySet()) {
+                XAResourceProducer producer = entry.getValue();
 
-            XAResourceHolder resourceHolder = producer.findXAResourceHolder(xaResource);
-            if (resourceHolder != null) {
-                if (log.isDebugEnabled()) log.debug("XAResource " + xaResource + " belongs to " + resourceHolder + " that itself belongs to " + producer);
-                return resourceHolder;
+                XAResourceHolder resourceHolder = producer.findXAResourceHolder(xaResource);
+                if (resourceHolder != null) {
+                    if (log.isDebugEnabled()) log.debug("XAResource " + xaResource + " belongs to " + resourceHolder + " that itself belongs to " + producer);
+                    return resourceHolder;
+                }
+                if (log.isDebugEnabled()) log.debug("XAResource " + xaResource + " does not belong to any resource of " + producer);
             }
-            if (log.isDebugEnabled()) log.debug("XAResource " + xaResource + " does not belong to any resource of " + producer);
+            return null;
+        } finally {
+            resourcesReadLock.unlock();
         }
-        return null;
     }
 
+    public static void clear() {
+        resourcesWriteLock.lock();
+        try {
+            resources.clear();
+        } finally {
+            resourcesWriteLock.unlock();
+        }
+    }
 }

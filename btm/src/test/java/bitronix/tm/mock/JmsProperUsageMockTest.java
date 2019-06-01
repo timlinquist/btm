@@ -20,21 +20,30 @@
  */
 package bitronix.tm.mock;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.List;
+
+import javax.jms.Connection;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.transaction.Status;
+import javax.transaction.xa.XAResource;
+
 import bitronix.tm.BitronixTransactionManager;
 import bitronix.tm.TransactionManagerServices;
+import bitronix.tm.mock.events.EventRecorder;
+import bitronix.tm.mock.events.JournalLogEvent;
+import bitronix.tm.mock.events.XAResourceCommitEvent;
+import bitronix.tm.mock.events.XAResourceEndEvent;
+import bitronix.tm.mock.events.XAResourceStartEvent;
+import bitronix.tm.resource.ResourceRegistrar;
 import bitronix.tm.resource.jms.PoolingConnectionFactory;
-import bitronix.tm.mock.events.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.transaction.*;
-import javax.transaction.xa.XAResource;
-import javax.jms.Connection;
-import javax.jms.Session;
-import javax.jms.Queue;
-import javax.jms.MessageProducer;
-import java.util.List;
-import java.io.*;
 
 /**
  *
@@ -46,6 +55,7 @@ public class JmsProperUsageMockTest extends AbstractMockJmsTest {
 
     @Override
     protected void setUp() throws Exception {
+        ResourceRegistrar.clear();
         super.setUp();
         TransactionManagerServices.getTransactionManager(); // start TM
     }
