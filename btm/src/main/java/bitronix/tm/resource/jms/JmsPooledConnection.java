@@ -37,6 +37,9 @@ import javax.jms.TemporaryQueue;
 import javax.jms.XAConnection;
 import javax.jms.XASession;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import bitronix.tm.internal.BitronixSystemException;
 import bitronix.tm.resource.common.AbstractXAStatefulHolder;
 import bitronix.tm.resource.common.RecoveryXAResourceHolder;
@@ -49,8 +52,6 @@ import bitronix.tm.utils.Decoder;
 import bitronix.tm.utils.ManagementRegistrar;
 import bitronix.tm.utils.MonotonicClock;
 import bitronix.tm.utils.Scheduler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of a JMS pooled connection wrapping vendor's {@link XAConnection} implementation.
@@ -110,6 +111,7 @@ public class JmsPooledConnection extends AbstractXAStatefulHolder implements Jms
         return new RecoveryXAResourceHolder(dualSessionWrapper);
     }
 
+    @Override
     public synchronized void close() throws JMSException {
         if (!closed) {
             setState(STATE_CLOSED);
@@ -118,6 +120,7 @@ public class JmsPooledConnection extends AbstractXAStatefulHolder implements Jms
         closed = true;
     }
 
+    @Override
     public List<XAResourceHolder> getXAResourceHolders() {
         sessionsReadLock.lock();
         try {
@@ -127,6 +130,7 @@ public class JmsPooledConnection extends AbstractXAStatefulHolder implements Jms
         }
     }
 
+    @Override
     public Object getConnectionHandle() throws Exception {
         if (log.isDebugEnabled()) log.debug("getting connection handle from " + this);
         int oldState = getState();
@@ -176,30 +180,34 @@ public class JmsPooledConnection extends AbstractXAStatefulHolder implements Jms
     }
 
     private void closePendingSessions() {
+        final ArrayList<DualSessionWrapper> sessionToIterate;
+      
         sessionsReadLock.lock();
         try {
-            for (DualSessionWrapper dualSessionWrapper : sessions) {
-                if (dualSessionWrapper.getState() != STATE_ACCESSIBLE)
-                    continue;
-
-                // performing classic ReentrantReadLock downgrade.
-                sessionsReadLock.unlock();
-                sessionsWriteLock.lock();
-                try {
-                    if (dualSessionWrapper.getState() != STATE_ACCESSIBLE)
-                        continue;
-                    if (log.isDebugEnabled()) log.debug("trying to close pending session " + dualSessionWrapper);
-                    dualSessionWrapper.close();
-                } catch (JMSException ex) {
-                    log.warn("error closing pending session " + dualSessionWrapper, ex);
-                } finally {
-                    // acquire read lock before releasing the write one to complete downgrade.
-                    sessionsReadLock.lock();
-                    sessionsWriteLock.unlock();
-                }
-            }
+            sessionToIterate = new ArrayList<>(sessions);
         } finally {
-            sessionsReadLock.unlock();
+          sessionsReadLock.unlock();
+        }
+
+        for (DualSessionWrapper dualSessionWrapper : sessionToIterate) {
+            if (dualSessionWrapper.getState() != STATE_ACCESSIBLE) {
+                continue;
+            }
+
+            sessionsWriteLock.lock();
+            try {
+                if (dualSessionWrapper.getState() != STATE_ACCESSIBLE) {
+                    continue;
+                }
+                if (log.isDebugEnabled()) {
+                    log.debug("trying to close pending session " + dualSessionWrapper);
+                }
+                dualSessionWrapper.close();
+            } catch (JMSException ex) {
+                log.warn("error closing pending session " + dualSessionWrapper, ex);
+            } finally {
+                sessionsWriteLock.unlock();
+            }
         }
     }
 
@@ -241,10 +249,12 @@ public class JmsPooledConnection extends AbstractXAStatefulHolder implements Jms
         }
     }
 
+    @Override
     public Date getLastReleaseDate() {
         return lastReleaseDate;
     }
 
+    @Override
     public String toString() {
             return "a JmsPooledConnection of pool " + poolingConnectionFactory.getUniqueName() + " in state " +
                     Decoder.decodeXAStatefulHolderState(getState()) + " with underlying connection " + xaConnection;
@@ -252,14 +262,17 @@ public class JmsPooledConnection extends AbstractXAStatefulHolder implements Jms
 
     /* management */
 
+    @Override
     public String getStateDescription() {
         return Decoder.decodeXAStatefulHolderState(getState());
     }
 
+    @Override
     public Date getAcquisitionDate() {
         return acquisitionDate;
     }
 
+    @Override
     public Collection<String> getTransactionGtridsCurrentlyHoldingThis() {
         sessionsWriteLock.lock();
         try {
@@ -279,6 +292,7 @@ public class JmsPooledConnection extends AbstractXAStatefulHolder implements Jms
      * {@link bitronix.tm.utils.ManagementRegistrar}.
      */
     private class JmsPooledConnectionStateChangeListener implements StateChangeListener {
+        @Override
         public void stateChanged(XAStatefulHolder source, int oldState, int newState) {
             if (newState == STATE_IN_POOL) {
                 if (log.isDebugEnabled()) log.debug("requeued JMS connection of " + poolingConnectionFactory);
@@ -292,6 +306,7 @@ public class JmsPooledConnection extends AbstractXAStatefulHolder implements Jms
             }
         }
 
+        @Override
         public void stateChanging(XAStatefulHolder source, int currentState, int futureState) {
         }
     }
@@ -301,6 +316,7 @@ public class JmsPooledConnection extends AbstractXAStatefulHolder implements Jms
      * When state changes to STATE_CLOSED, the session is removed from the list of opened sessions.
      */
     private class JmsConnectionHandleStateChangeListener implements StateChangeListener {
+        @Override
         public void stateChanged(XAStatefulHolder source, int oldState, int newState) {
             if (newState == XAResourceHolder.STATE_CLOSED) {
                 sessionsWriteLock.lock();
@@ -313,6 +329,7 @@ public class JmsPooledConnection extends AbstractXAStatefulHolder implements Jms
             }
         }
 
+        @Override
         public void stateChanging(XAStatefulHolder source, int currentState, int futureState) {
         }
     }
