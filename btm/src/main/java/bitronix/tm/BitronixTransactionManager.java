@@ -66,8 +66,8 @@ public class BitronixTransactionManager implements TransactionManager, UserTrans
     private final static Logger log = LoggerFactory.getLogger(BitronixTransactionManager.class);
     private final static String MDC_GTRID_KEY = "btm-gtrid";
 
-    private final Map<Thread, ThreadContext> contexts = new ConcurrentHashMap<Thread, ThreadContext>(128, 0.75f, 128);
-    private final Map<Uid, BitronixTransaction> inFlightTransactions = new ConcurrentHashMap<Uid, BitronixTransaction>(128, 0.75f, 128);
+    private final Map<Thread, ThreadContext> contexts = new ConcurrentHashMap<>(128, 0.75f, 128);
+    private final Map<Uid, BitronixTransaction> inFlightTransactions = new ConcurrentHashMap<>(128, 0.75f, 128);
 
     private volatile boolean shuttingDown;
 
@@ -80,7 +80,6 @@ public class BitronixTransactionManager implements TransactionManager, UserTrans
             shuttingDown = false;
             logVersion();
             Configuration configuration = TransactionManagerServices.getConfiguration();
-            configuration.setDisableJmx(true);
             configuration.buildServerIdArray(); // first call will initialize the ServerId
 
             if (log.isDebugEnabled()) log.debug("starting BitronixTransactionManager using " + configuration);

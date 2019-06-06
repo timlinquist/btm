@@ -20,7 +20,11 @@
  */
 package bitronix.tm;
 
-import bitronix.tm.utils.*;
+import bitronix.tm.utils.InitializationException;
+import bitronix.tm.utils.PropertyException;
+import bitronix.tm.utils.PropertyUtils;
+import bitronix.tm.utils.Service;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -424,6 +428,7 @@ public class Configuration implements Service {
      * @return the interval in minutes.
      * @deprecated superceded by #getBackgroundRecoveryIntervalSeconds().
      */
+    @Deprecated
     public int getBackgroundRecoveryInterval() {
         return getBackgroundRecoveryIntervalSeconds() / 60;
     }
@@ -435,6 +440,7 @@ public class Configuration implements Service {
      * @deprecated superceded by #setBackgroundRecoveryIntervalSeconds(int).
      * @return this.
      */
+    @Deprecated
     public Configuration setBackgroundRecoveryInterval(int backgroundRecoveryInterval) {
         log.warn("setBackgroundRecoveryInterval() is deprecated, consider using setBackgroundRecoveryIntervalSeconds() instead.");
         setBackgroundRecoveryIntervalSeconds(backgroundRecoveryInterval * 60);
@@ -671,10 +677,12 @@ public class Configuration implements Service {
         return serverIdArray;
     }
 
+    @Override
     public void shutdown() {
         serverIdArray = null;
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(512);
         sb.append("a Configuration with [");
