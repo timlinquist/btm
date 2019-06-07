@@ -20,6 +20,7 @@
  */
 package bitronix.tm;
 
+import bitronix.tm.utils.ClassLoaderUtils;
 import bitronix.tm.utils.InitializationException;
 import bitronix.tm.utils.PropertyException;
 import bitronix.tm.utils.PropertyUtils;
