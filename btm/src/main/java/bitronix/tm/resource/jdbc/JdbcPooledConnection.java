@@ -447,4 +447,8 @@ public class JdbcPooledConnection extends AbstractXAResourceHolder implements St
         return getXAResourceHolderStateGtrids();
     }
 
+    public XAConnection getXaConnection() {
+        return xaConnection;
+    }
+
 }
