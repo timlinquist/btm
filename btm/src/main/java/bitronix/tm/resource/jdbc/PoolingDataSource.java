@@ -80,7 +80,7 @@ public class PoolingDataSource extends ResourceBean implements DataSource, XARes
         factoryConstructorArgs = new Object[] {};
     }
 
-    public PoolingDataSource(Object[] factoryConstructorArgs) {
+    public PoolingDataSource(Object... factoryConstructorArgs) {
         this.factoryConstructorArgs = factoryConstructorArgs;
     }
 
