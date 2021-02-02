@@ -74,8 +74,14 @@ public class PoolingDataSource extends ResourceBean implements DataSource, XARes
 	private volatile String localAutoCommit;
     private volatile String jmxName;
     private final List<ConnectionCustomizer> connectionCustomizers = new CopyOnWriteArrayList<ConnectionCustomizer>();
+    private final Object[] factoryConstructorArgs;
 
     public PoolingDataSource() {
+        factoryConstructorArgs = new Object[] {};
+    }
+
+    public PoolingDataSource(Object[] factoryConstructorArgs) {
+        this.factoryConstructorArgs = factoryConstructorArgs;
     }
 
     /**
@@ -99,7 +105,7 @@ public class PoolingDataSource extends ResourceBean implements DataSource, XARes
             return;
 
         if (log.isDebugEnabled()) log.debug("building XA pool for " + getUniqueName() + " with " + getMinPoolSize() + " connection(s)");
-        pool = new XAPool(this, this);
+        pool = new XAPool(this, this, factoryConstructorArgs);
         xaDataSource = (XADataSource) pool.getXAFactory();
         try {
             ResourceRegistrar.register(this);
