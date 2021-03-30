@@ -94,6 +94,7 @@ public class BitronixTransaction implements Transaction, BitronixTransactionMBea
     /* management */
     private volatile String threadName;
     private volatile Date startDate;
+    private volatile Date startDateInMillis;
     private volatile StackTrace activationStackTrace;
 
 
@@ -366,6 +367,7 @@ public class BitronixTransaction implements Transaction, BitronixTransactionMBea
 
         setStatus(Status.STATUS_ACTIVE);
         this.startDate = new Date(MonotonicClock.currentTimeMillis());
+        this.startDateInMillis = new Date(System.currentTimeMillis());
         this.timeoutDate = new Date(MonotonicClock.currentTimeMillis() + (timeout * 1000L));
         if (TransactionManagerServices.getConfiguration().isDebugZeroResourceTransaction()) {
             this.activationStackTrace = new StackTrace();
@@ -429,7 +431,7 @@ public class BitronixTransaction implements Transaction, BitronixTransactionMBea
     }
 
     public String toString() {
-        return "a Bitronix Transaction with GTRID [" + resourceManager.getGtrid() + "], status=" + Decoder.decodeStatus(status) + ", " + resourceManager.size() + " resource(s) enlisted (started " + startDate + ")";
+        return "a Bitronix Transaction with GTRID [" + resourceManager.getGtrid() + "], status=" + Decoder.decodeStatus(status) + ", " + resourceManager.size() + " resource(s) enlisted (started " + startDateInMillis + ")";
     }
 
 
