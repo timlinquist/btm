@@ -216,8 +216,8 @@ public class XAResourceManager {
                 log.debug("checking joinability of " + xaResourceHolderState + " with " + alreadyEnlistedHolderState);
             if (alreadyEnlistedHolderState.isEnded() &&
                     !alreadyEnlistedHolderState.isSuspended() &&
-                    (xaResourceHolderState.getXAResource() == alreadyEnlistedHolderState.getXAResource()
-                    || xaResourceHolderState.getXAResource().isSameRM(alreadyEnlistedHolderState.getXAResource()))) {
+                    (xaResourceHolderState.getXAResource().isSameRM(alreadyEnlistedHolderState.getXAResource())
+                    || xaResourceHolderState.getXAResource() == alreadyEnlistedHolderState.getXAResource())) {
                 if (log.isDebugEnabled()) log.debug("resources are joinable");
                 return alreadyEnlistedHolderState;
             }
