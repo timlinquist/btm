@@ -87,7 +87,14 @@ public class XAPool implements StateChangeListener {
     }
 
     private synchronized void init() throws Exception {
-        growUntilMinPoolSize();
+        try {
+            growUntilMinPoolSize();
+        } catch(Exception ex) {
+            log.warn("Exception found when growing the pool. Cleaning {} dangling connections",objects.size());
+            close();
+            setFailed(true);
+            throw ex;
+        }
 
         if (bean.getMaxIdleTime() > 0) {
             TransactionManagerServices.getTaskScheduler().schedulePoolShrinking(this);
@@ -416,9 +423,15 @@ public class XAPool implements StateChangeListener {
     }
 
     private synchronized void growUntilMinPoolSize() throws Exception {
+        try {
         for (int i = (int)totalPoolSize(); i < bean.getMinPoolSize() ;i++) {
             createPooledObject(xaFactory);
         }
+        } catch(Exception ex) {
+            log.error("Exception caught when growing the pool. {} connections might be leaked",objects.size(),ex);
+            throw ex;
+        }
+
     }
 
     private synchronized void waitForConnectionInPool() {

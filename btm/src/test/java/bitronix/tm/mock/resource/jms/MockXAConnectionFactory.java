@@ -44,6 +44,9 @@ import bitronix.tm.mock.resource.MockXAResource;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  * @author lorban
@@ -52,10 +55,16 @@ public class MockXAConnectionFactory implements XAConnectionFactory {
 
     private static JMSException staticCloseXAConnectionException;
     private static JMSException staticCreateXAConnectionException;
+    private static int connectionsToFail =0;
+    private static List<XAConnection> connections = new ArrayList<>();
 
     public XAConnection createXAConnection() throws JMSException {
         if (staticCreateXAConnectionException != null)
             throw staticCreateXAConnectionException;
+
+        if (connectionsToFail > 0 && connectionsToFail == connections.size()) {
+                throw new JMSException("Max number of connections reached");
+        }
 
     	Answer xaSessionAnswer = new Answer<XASession>() {
     		public XASession answer(InvocationOnMock invocation)throws Throwable {
@@ -92,6 +101,9 @@ public class MockXAConnectionFactory implements XAConnectionFactory {
         if (staticCloseXAConnectionException != null)
             doThrow(staticCloseXAConnectionException).when(mockXAConnection).close();
 
+        if (connectionsToFail > 0) {
+                connections.add(mockXAConnection);
+	}
         return mockXAConnection;
     }
 
@@ -118,4 +130,16 @@ public class MockXAConnectionFactory implements XAConnectionFactory {
     public static void setStaticCreateXAConnectionException(JMSException e) {
         staticCreateXAConnectionException = e;
     }
+
+        public static void setStaticConnectionsToFail(int failAfterConnections) {
+                connectionsToFail = failAfterConnections;
+	}
+
+	public static void resetStatus() {
+    	        connections= new ArrayList<>();
+	}
+	public static List<XAConnection> getConnections() {
+    	        return connections;
+	}
+
 }
