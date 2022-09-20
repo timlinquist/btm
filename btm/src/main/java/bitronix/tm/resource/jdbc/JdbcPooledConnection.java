@@ -124,6 +124,7 @@ public class JdbcPooledConnection extends AbstractXAResourceHolder implements St
 
         try {
             isValidMethod = connection.getClass().getMethod("isValid", Integer.TYPE);
+            isValidMethod.setAccessible(true);
             isValidMethod.invoke(connection, DETECTION_TIMEOUT); // test invoke
             jdbcVersionDetected = 4;
             if (!poolingDataSource.isEnableJdbc4ConnectionTest()) {
