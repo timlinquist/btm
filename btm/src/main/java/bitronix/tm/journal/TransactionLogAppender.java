@@ -27,11 +27,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.nio.channels.spi.AbstractInterruptibleChannel;
 import java.util.Set;
 
 /**
@@ -75,7 +73,6 @@ public class TransactionLogAppender {
             throw new IOException("transaction log file " + file.getName() + " is locked. Is another instance already running?");
 
         spawnBatcherThread();
-        keepFileChannelOpenOnInterrupt(file.getName(), this.fc);
     }
 
     /**
@@ -228,39 +225,6 @@ public class TransactionLogAppender {
 
             diskForceBatcherThread = null;
         } // synchronized
-    }
-
-    /**
-     * When transactional operation is interrupted by Thread.interrupt the default java.nio.channels.spi.AbstractInterruptibleChannel
-     * closes the file channel which leads to ClosedChannelException when other threads try to start Transactions.
-     * The fix https://github.com/bitronix/btm/issues/45 is limiting to avoid interrupt in own library but other classes may interrupt the thread as well
-     * (e.g. java.util.concurrent.locks.AbstractQueuedSynchronizer.doAcquireSharedInterruptibly)
-     * According to https://gamlor.info/posts-output/2019-11-13-file-channel-closes-when-interrupted/en/ and https://stackoverflow.com/questions/52261086/is-there-a-way-to-prevent-closedbyinterruptexception
-     * the workaround is to set another interruptor to AbstractInterruptibleChannel.interruptor
-     * (The closing during interruption is not needed as the close of the channel is performed in our own close() method.)
-     */
-    private void keepFileChannelOpenOnInterrupt(String aContextInfo, FileChannel aFc) {
-        Field field = null;
-        try {
-            field = AbstractInterruptibleChannel.class.getDeclaredField("interruptor");
-            field.setAccessible(true);
-            field.set(fc, new IgnoreAllInterruptRequests(aContextInfo));
-            log.info("Filechannel " + aFc + " is kept open on Thread.interrupt() now.");
-        } catch (RuntimeException | NoSuchFieldException | IllegalAccessException e) {
-            log.warn("Ignore: Cannot set interruptor on " + aFc + " with field=" + field, e);
-        }
-    }
-
-    @SuppressWarnings("restriction")
-    private class IgnoreAllInterruptRequests implements sun.nio.ch.Interruptible {
-        private String contextInfo;
-        private IgnoreAllInterruptRequests(String aContextInfo) {
-            contextInfo = aContextInfo;
-        }
-        @Override
-        public void interrupt(Thread aT) {
-            log.info("Keep file channel for " + contextInfo + " open even interrupt came from " + aT);
-        }
     }
 
 }
