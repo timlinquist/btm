@@ -110,7 +110,8 @@ public class RecoveryHelper {
         for (Xid xid : xids) {
             if (xid.getFormatId() != BitronixXid.FORMAT_ID) {
                 if (log.isDebugEnabled()) log.debug("skipping non-bitronix XID " + xid + "(format ID: " + xid.getFormatId() +
-                     " GTRID: " + new Uid(xid.getGlobalTransactionId()) + "BQUAL: " + new Uid(xid.getBranchQualifier()) + ")");
+                     " GTRID: " + (xid.getGlobalTransactionId() == null? "": new Uid(xid.getGlobalTransactionId())) +
+                     "BQUAL: " + (xid.getBranchQualifier() == null? "": new Uid(xid.getBranchQualifier())) + ")");
                 continue;
             }
 
