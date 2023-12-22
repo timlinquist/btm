@@ -31,6 +31,9 @@ import javax.naming.Reference;
 import javax.naming.StringRefAddr;
 import javax.transaction.xa.XAResource;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import bitronix.tm.internal.XAResourceHolderState;
 import bitronix.tm.recovery.RecoveryException;
 import bitronix.tm.resource.ResourceConfigurationException;
@@ -43,8 +46,6 @@ import bitronix.tm.resource.common.XAResourceHolder;
 import bitronix.tm.resource.common.XAResourceProducer;
 import bitronix.tm.resource.common.XAStatefulHolder;
 import bitronix.tm.utils.ManagementRegistrar;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of a JMS {@link ConnectionFactory} wrapping vendor's {@link XAConnectionFactory} implementation.
@@ -76,6 +77,7 @@ public class PoolingConnectionFactory extends ResourceBean implements Connection
     /**
      * Initialize the pool by creating the initial amount of connections.
      */
+    @Override
     public synchronized void init() {
         try {
             if (pool != null)
@@ -146,6 +148,7 @@ public class PoolingConnectionFactory extends ResourceBean implements Connection
     }
 
 
+    @Override
     public Connection createConnection() throws JMSException {
         if (isDisabled()) {
             throw new JMSException("JMS connection pool '" + getUniqueName() + "' is disabled, cannot get a connection from it");
@@ -159,6 +162,7 @@ public class PoolingConnectionFactory extends ResourceBean implements Connection
         }
     }
 
+    @Override
     public Connection createConnection(String userName, String password) throws JMSException {
         if (log.isDebugEnabled()) log.debug("JMS connections are pooled, username and password ignored");
         return createConnection();
@@ -196,6 +200,7 @@ public class PoolingConnectionFactory extends ResourceBean implements Connection
 
     /* XAResourceProducer implementation */
 
+    @Override
     public XAResourceHolderState startRecovery() throws RecoveryException {
         init();
         if (recoveryPooledConnection != null)
@@ -211,6 +216,7 @@ public class PoolingConnectionFactory extends ResourceBean implements Connection
         }
     }
 
+    @Override
     public void endRecovery() throws RecoveryException {
         if (recoveryPooledConnection == null)
             return;
@@ -241,15 +247,18 @@ public class PoolingConnectionFactory extends ResourceBean implements Connection
         }
     }
 
+    @Override
     public void setFailed(boolean failed) {
         pool.setFailed(failed);
     }
 
+    @Override
     public boolean isFailed() {
         return pool.isFailed();
     }
 
-    public void close() {
+    @Override
+    public synchronized void close() {
         if (pool == null)
             return;
 
@@ -263,6 +272,7 @@ public class PoolingConnectionFactory extends ResourceBean implements Connection
         ResourceRegistrar.unregister(this);
     }
 
+    @Override
     public XAStatefulHolder createPooledConnection(Object xaFactory, ResourceBean bean) throws Exception {
         if (!(xaFactory instanceof XAConnectionFactory))
             throw new IllegalArgumentException("class '" + xaFactory.getClass().getName() + "' does not implement " + XAConnectionFactory.class.getName());
@@ -281,6 +291,7 @@ public class PoolingConnectionFactory extends ResourceBean implements Connection
         return new JmsPooledConnection(this, xaConnection);
     }
 
+    @Override
     public XAResourceHolder findXAResourceHolder(XAResource xaResource) {
         return pool.findXAResourceHolder(xaResource);
     }
@@ -292,6 +303,7 @@ public class PoolingConnectionFactory extends ResourceBean implements Connection
      * using the unique name as {@link javax.naming.RefAddr}.
      * @return a reference to this {@link PoolingConnectionFactory}.
      */
+    @Override
     public Reference getReference() throws NamingException {
         if (log.isDebugEnabled()) log.debug("creating new JNDI reference of " + this);
         return new Reference(
@@ -303,14 +315,17 @@ public class PoolingConnectionFactory extends ResourceBean implements Connection
 
     /* management */
 
+    @Override
     public long getInPoolSize() {
         return pool.inPoolSize();
     }
 
+    @Override
     public long getTotalPoolSize() {
         return pool.totalPoolSize();
     }
 
+    @Override
     public void reset() throws Exception {
         pool.reset();
     }
